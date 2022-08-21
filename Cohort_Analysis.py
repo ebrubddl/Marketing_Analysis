@@ -12,11 +12,13 @@ def get_month(x):
 # Create InvoiceDay column
 online['InvoiceMonth'] = online['InvoiceDate'].apply(get_month)
 
+
 # Group by CustomerID and select the InvoiceDay value
 grouping = online.groupby('CustomerID')['InvoiceMonth']
 
 # Assign a minimum InvoiceDay value to the dataset
 online['CohortMonth'] = grouping.transform('min')
+#print(online.head())
 
 
 def get_date_int(df, column):
@@ -53,8 +55,12 @@ def get_date_int(df, column):
 grouping = online.groupby(["CohortMonth", "CohortIndex"])
 cohort_data = grouping["CustomerID"].apply(pd.Series.nunique).reset_index()
 
+
 # Create a pivot
-cohort_counts = cohort_data.pivot(index="CohortMonth", columns="CohortIndex", values="CustomerID")
+cohort_counts = cohort_data.pivot(index="CohortMonth",
+                                  columns="CohortIndex",
+                                  values="CustomerID")
+print(cohort_counts)
 
 # Select the first column and store it to cohort_sizes
 cohort_sizes = cohort_counts.iloc[:,0]
@@ -62,28 +68,32 @@ cohort_sizes = cohort_counts.iloc[:,0]
 # Divide the cohort count by cohort sizes along the rows
 retention = cohort_counts.divide(cohort_sizes, axis=0)
 retention.round(3)*100
+print(retention)
 
 # Create a groupby object and pass the monthly cohort and cohort index as a list
 grouping = online.groupby(["CohortMonth", "CohortIndex"])
 
-# Calculate the average of the unit price column
+# Calculate the average of the Quantity column
 cohort_data = grouping["Quantity"].mean()
 
 # Reset the index of cohort_data
 cohort_data = cohort_data.reset_index()
 
 # Create a pivot
-average_quantity = cohort_data.pivot(index="CohortMonth", columns="CohortIndex", values="Quantity")
+average_quantity = cohort_data.pivot(index="CohortMonth",
+                                     columns="CohortIndex",
+                                     values="Quantity")
 print(average_quantity.round(1))
 
 import seaborn as sns
 import matplotlib.pyplot as plt
-plt.figure(figsize=(10,8))
+plt.figure(figsize=(12,10))
 plt.title("Retention Rates")
-sns.heatmap(data=retention,
-            annot=True
+sns.heatmap(data=retention
+            ,annot=True
             ,fmt=".0%"
             ,vmin=0.0
             ,vmax=0.5
-            ,cmap="BuGn")
+            ,cmap="YlGnBu")
+
 plt.show()
